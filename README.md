@@ -1,295 +1,295 @@
 # fiotp
 
-Hafif ve güvenli bir İki Faktörlü Kimlik Doğrulama (2FA/TOTP) uygulaması. RFC 6238 (TOTP) ve RFC 4226 (HOTP) standartlarına tam uyumlu kod üretimi, AES-256-GCM ile şifrelenmiş yerel kasa, `otpauth://` URI ayrıştırma, QR kod okuma/görüntüleme ve şifreli JSON yedekleme.
+A lightweight, secure Two-Factor Authentication (2FA/TOTP) application. Fully compliant code generation with RFC 6238 (TOTP) and RFC 4226 (HOTP), an AES-256-GCM encrypted local vault, `otpauth://` URI parsing, QR code scanning/rendering, and encrypted JSON backup.
 
-- **Sıfır runtime bağımlılık istemez**: kriptografi tamamen Node.js yerleşik `crypto` modülüyle yapılır (yalnız QR için hafif saf-JS paketler kullanılır).
-- **TypeScript** ile tip korumalı, modüler ve test edilmiş.
-- **CLI + programatik API** olarak kullanılabilir.
+- **Zero runtime dependencies required**: cryptography is done entirely with Node.js's built-in `crypto` module (only lightweight pure-JS packages are used for QR).
+- **TypeScript**-typed, modular, and tested.
+- Usable as a **CLI + programmatic API**.
 
-## İçindekiler
+## Table of Contents
 
-- [Özellikler](#özellikler)
-- [Kurulum](#kurulum)
-- [CLI Kullanımı](#cli-kullanımı)
-  - [İlk kullanım (kasa oluşturma)](#ilk-kullanım-kasa-oluşturma)
-  - [Hesap ekleme](#hesap-ekleme)
-  - [Hesapları listeleme](#hesapları-listeleme)
-  - [Kod üretme](#kod-üretme)
-  - [QR gösterme](#qr-gösterme)
-  - [Yedekleme](#yedekleme)
-  - [Master parola değiştirme](#master-parola-değiştirme)
-- [Programatik API](#programatik-api)
-- [Güvenlik Modeli](#güvenlik-modeli)
-- [Proje Yapısı](#proje-yapısı)
-- [Geliştirme](#geliştirme)
-- [Sınırlamalar](#sınırlamalar)
+- [Features](#features)
+- [Installation](#installation)
+- [CLI Usage](#cli-usage)
+  - [First use (creating a vault)](#first-use-creating-a-vault)
+  - [Adding an account](#adding-an-account)
+  - [Listing accounts](#listing-accounts)
+  - [Generating codes](#generating-codes)
+  - [Displaying a QR code](#displaying-a-qr-code)
+  - [Backup](#backup)
+  - [Changing the master password](#changing-the-master-password)
+- [Programmatic API](#programmatic-api)
+- [Security Model](#security-model)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [Limitations](#limitations)
 
-## Özellikler
+## Features
 
-- RFC 4226 / RFC 6238 uyumlu **HOTP ve TOTP** (SHA-1, SHA-256, SHA-512; 6-10 hane; özel pencere süresi)
-- **AES-256-GCM** ile şifrelenmiş yerel kasa; diskte asla düz metin saklanmaz
-- **PBKDF2-HMAC-SHA256** (600.000 iterasyon, OWASP önerisi) anahtar türetme
-- Master parola doğrulaması GCM kimlik doğrulama etiketi üzerinden yapılır — parola karması saklanmaz
-- `otpauth://totp/...` ve `otpauth://hotp/...` URI ayrıştırma/üretme, katı doğrulama
-- **Google Authenticator aktarım** (`otpauth-migration://`) ile toplu hesap içe aktarma (TOTP/HOTP, SHA-256/512 destekli; MD5 hesapları otomatik atlanır)
-- QR kod üretme (SVG/terminal/PNG) ve PNG okuma (saf JS)
-- Canlı kod akışı: her saniye `{ code, remainingSeconds }` yayını
-- HOTP doğrulamada RFC 4226 §7.4 uyumlu **resync penceresi** (10 sayaç) ve otomatik sayaç ilerleme
-- Şifreli JSON **export/import** (merge / replace)
-- Master parola değiştirme (tüm kasa yeni anahtarla yeniden şifrelenir)
-- Otomatik **kasa yedekleme** (`<kasa>.bak`) ve `recover` ile kurtarma
-- Kasa dosyaları **0600** izniyle, dizinler **0700** izniyle yazılır; yazma atomiktir (tmp + rename)
-- 5 dakika hareketsizlikte **otomatik kilit** (ayarlanabilir)
-- Başarısız parola denemelerinde **üstel geri çekilme** (rate limiting)
-- Eşzamanlı yazma işlemleri (save / parola değiştirme) kuyruğa alınır
-- Farklılık testleri RFC resmî test vektörleriyle doğrulanır
+- RFC 4226 / RFC 6238 compliant **HOTP and TOTP** (SHA-1, SHA-256, SHA-512; 6-10 digits; custom time step)
+- **AES-256-GCM** encrypted local vault; plaintext is never stored on disk
+- **PBKDF2-HMAC-SHA256** (600,000 iterations, OWASP recommendation) key derivation
+- Master password verification via the GCM authentication tag — no password hash is stored
+- `otpauth://totp/...` and `otpauth://hotp/...` URI parsing/generation with strict validation
+- **Google Authenticator export** (`otpauth-migration://`) support for bulk account import (TOTP/HOTP, SHA-256/512 supported; MD5 accounts are automatically skipped)
+- QR code generation (SVG/terminal/PNG) and PNG reading (pure JS)
+- Live code stream: `{ code, remainingSeconds }` emitted every second
+- RFC 4226 §7.4 compliant **resync window** (10 counters) and automatic counter advancement for HOTP verification
+- Encrypted JSON **export/import** (merge / replace)
+- Master password change (the entire vault is re-encrypted with a new key)
+- Automatic **vault backup** (`<vault>.bak`) and recovery via `recover`
+- Vault files are written with **0600** permissions, directories with **0700**; writes are atomic (tmp + rename)
+- **Automatic lock** after 5 minutes of inactivity (configurable)
+- **Exponential backoff** (rate limiting) on failed password attempts
+- Concurrent write operations (save / password change) are queued
+- Differential tests validated against official RFC test vectors
 
-## Kurulum
+## Installation
 
-Gereksinim: **Node.js ≥ 20**
+Requirement: **Node.js ≥ 20**
 
 ```bash
 npm install
-npm run build          # dist/ klasörüne derle
+npm run build          # build to the dist/ folder
 ```
 
-CLI'yı global olarak kullanmak için:
+To use the CLI globally:
 
 ```bash
-npm link               # `fiotp` komutu terminale gelir
+npm link               # the `fiotp` command becomes available in your terminal
 ```
 
-CLI'yı linklemeden de kullanabilirsiniz:
+You can also use the CLI without linking:
 
 ```bash
-node dist/cli/index.js list /path/to/kasa.json
+node dist/cli/index.js list /path/to/vault.json
 ```
 
-## CLI Kullanımı
+## CLI Usage
 
 ```
-fiotp init <kasa>
-fiotp add <kasa> [otpauth-uri|secret]
-fiotp list <kasa>
-fiotp code <kasa> [hesap-id|account]
-fiotp qr <kasa> <hesap-id|account>
-fiotp export <kasa> <yedek.json>
-fiotp import <kasa> <yedek.json>
-fiotp passwd <kasa>
-fiotp watch <kasa>
-fiotp recover <kasa>
+fiotp init <vault>
+fiotp add <vault> [otpauth-uri|secret]
+fiotp list <vault>
+fiotp code <vault> [account-id|account]
+fiotp qr <vault> <account-id|account>
+fiotp export <vault> <backup.json>
+fiotp import <vault> <backup.json>
+fiotp passwd <vault>
+fiotp watch <vault>
+fiotp recover <vault>
 ```
 
-Parolalar etkileşimli olarak ekrana yazdırılmadan sorulur. Betik/senaryolar için ortam değişkenleri:
+Passwords are prompted interactively without being echoed to the screen. Environment variables for scripts/scenarios:
 
-- `FIOTP_PASSWORD` — kasayı açmak için mevcut master parola
-- `FIOTP_NEW_PASSWORD` — yalnız `passwd` komutunda yeni parola
+- `FIOTP_PASSWORD` — the current master password used to open the vault
+- `FIOTP_NEW_PASSWORD` — the new password, used only with the `passwd` command
 
-> **Not:** `FIOTP_PASSWORD` kullanıldığında parola process listesinden görülebileceği için güvenilmeyen ortamlarda etkileşimli giriş önerilir.
+> **Note:** When `FIOTP_PASSWORD` is used, the password may be visible in the process list, so interactive entry is recommended in untrusted environments.
 
-### İlk kullanım (kasa oluşturma)
+### First use (creating a vault)
 
 ```bash
-fiotp init ~/.fiotp/kasa.json
-# Master parola: ******** (en az 8 karakter)
+fiotp init ~/.fiotp/vault.json
+# Master password: ******** (at least 8 characters)
 ```
 
-Kasa dosyası `0600` izinleriyle oluşturulur.
+The vault file is created with `0600` permissions.
 
-### Hesap ekleme
+### Adding an account
 
-Bir QR/URI'den (en yaygın yöntem — Google Authenticator, Bitwarden vb. hesapları aynı formattadır):
+From a QR/URI (the most common method — accounts from Google Authenticator, Bitwarden, etc. are all in this format):
 
 ```bash
-fiotp add ~/.fiotp/kasa.json "otpauth://totp/GitHub:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=GitHub"
+fiotp add ~/.fiotp/vault.json "otpauth://totp/GitHub:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=GitHub"
 ```
 
-Google Authenticator'dan aktarma QR kodu (`otpauth-migration://` URI'si) ile toplu içe aktarma da desteklenir:
+Bulk import via a Google Authenticator export QR code (`otpauth-migration://` URI) is also supported:
 
 ```bash
-fiotp add ~/.fiotp/kasa.json "otpauth-migration://offline?data=Ci0K..."
+fiotp add ~/.fiotp/vault.json "otpauth-migration://offline?data=Ci0K..."
 ```
 
-Birden fazla hesap tek seferde içe aktarılır; tekrarlanan hesaplar otomatik atlanır. MD5 algoritmalı hesaplar desteklenmediği için atlanır ve uyarı verilir.
+Multiple accounts are imported at once; duplicate accounts are skipped automatically. Accounts using the MD5 algorithm are not supported and are skipped with a warning.
 
-Ya da manuel olarak (issuer ve account sorulur):
+Or manually (you will be prompted for issuer and account):
 
 ```bash
-fiotp add ~/.fiotp/kasa.json JBSWY3DPEHPK3PXP
+fiotp add ~/.fiotp/vault.json JBSWY3DPEHPK3PXP
 ```
 
-HOTP hesapları da desteklenir (`otpauth://hotp/...&counter=0`).
+HOTP accounts are also supported (`otpauth://hotp/...&counter=0`).
 
-### Hesapları listeleme
+### Listing accounts
 
 ```bash
-fiotp list ~/.fiotp/kasa.json
+fiotp list ~/.fiotp/vault.json
 # 4de344c7-...  GitHub:user@example.com
-# 8201146f-...  [hotp] Banka:alice
+# 8201146f-...  [hotp] Bank:alice
 ```
 
-HOTP hesapları `[hotp]` etiketiyle işaretlenir.
+HOTP accounts are marked with the `[hotp]` tag.
 
-### Kod üretme
+### Generating codes
 
-Hesap seçicisi olarak hesap ID'si veya account adı verilir:
+Either the account ID or the account name can be used as the account selector:
 
 ```bash
-fiotp code ~/.fiotp/kasa.json user@example.com
-# Kod: 123456  Kalan: 17 sn
+fiotp code ~/.fiotp/vault.json user@example.com
+# Code: 123456  Remaining: 17s
 ```
 
-- **TOTP** hesaplarında kod + kalan süre her saniye yenilenir (Ctrl+C ile çıkılır).
-- **HOTP** hesaplarında kod tek seferlik basılır.
+- For **TOTP** accounts, the code and remaining time refresh every second (exit with Ctrl+C).
+- For **HOTP** accounts, the code is printed once.
 
-### QR gösterme
+### Displaying a QR code
 
-Hesabın otpauth URI'sini terminalde QR olarak çizer (başka bir cihaza aktarmak için):
+Renders the account's otpauth URI as a QR code in the terminal (for transferring to another device):
 
 ```bash
-fiotp qr ~/.fiotp/kasa.json user@example.com
+fiotp qr ~/.fiotp/vault.json user@example.com
 ```
 
-### Yedekleme
+### Backup
 
-Tüm kasa, şifreli JSON olarak dışa aktarılır (düz metin asla dışarı çıkmaz):
+The entire vault is exported as encrypted JSON (plaintext is never exposed):
 
 ```bash
-fiotp export ~/.fiotp/kasa.json ~/yedek.json
+fiotp export ~/.fiotp/vault.json ~/backup.json
 ```
 
-Yedeği aynı veya farklı bir kasaya geri yükler (tekrarlanan hesaplar atlanır):
+Restores the backup into the same or a different vault (duplicate accounts are skipped):
 
 ```bash
-fiotp import ~/.fiotp/kasa.json ~/yedek.json
+fiotp import ~/.fiotp/vault.json ~/backup.json
 ```
 
-### Master parola değiştirme
+### Changing the master password
 
 ```bash
-fiotp passwd ~/.fiotp/kasa.json
+fiotp passwd ~/.fiotp/vault.json
 ```
 
-Mevcut parola yeniden doğrulanır; yeni parola iki kez istenir. Kasa tamamen yeni anahtarla yeniden şifrelenir.
+The current password is re-verified; the new password is requested twice. The entire vault is re-encrypted with the new key.
 
-### Canlı panel
+### Live dashboard
 
-Tüm TOTP hesaplarını tek ekranda, her saniye yenilenen kod ve kalan süreleriyle gösterir (Ctrl+C ile çıkılır):
+Displays all TOTP accounts on a single screen, with codes and remaining time refreshing every second (exit with Ctrl+C):
 
 ```bash
-fiotp watch ~/.fiotp/kasa.json
+fiotp watch ~/.fiotp/vault.json
 ```
 
-### Kasa kurtarma
+### Vault recovery
 
-`save()` her yazmadan önce mevcut dosyayı `<kasa>.bak` olarak yedekler. Kasa dosyanız bozulursa son iyi sürümü geri yükleyebilirsiniz:
+`save()` backs up the existing file as `<vault>.bak` before every write. If your vault file becomes corrupted, you can restore the last known-good version:
 
 ```bash
-fiotp recover ~/.fiotp/kasa.json
+fiotp recover ~/.fiotp/vault.json
 ```
 
-## Programatik API
+## Programmatic API
 
-fiotp aynı zamanda bir kütüphane olarak da kullanılabilir.
+fiotp can also be used as a library.
 
 ```ts
 import { FiotpService } from "fiotp";
 
-// Kasa aç
-const service = await FiotpService.open("/tmp/kasa.json", "master-parola");
+// Open a vault
+const service = await FiotpService.open("/tmp/vault.json", "master-password");
 
-// URI'den hesap ekle
+// Add an account from a URI
 const account = service.addAccount(
   "otpauth://totp/GitHub:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=GitHub",
 );
 
-// Kod üret (TOTP: kalan süreyle; HOTP: tek seferlik)
+// Generate a code (TOTP: with remaining time; HOTP: one-time)
 const code = service.getCode(account.id);
-console.log(code.code, code.type === "totp" ? `${code.remainingSeconds} sn` : "");
+console.log(code.code, code.type === "totp" ? `${code.remainingSeconds}s` : "");
 
-// Kod doğrula (HOTP'ta sayaç otomatik ilerler)
+// Verify a code (the counter advances automatically for HOTP)
 const ok = await service.verifyCode(account.id, code.code);
 
-// Canlı akış: her saniye yeni kod + kalan süre
+// Live stream: a new code + remaining time every second
 const unsubscribe = service.subscribe(account.id, (tick) => {
   console.log(tick.code, tick.remainingSeconds);
 });
 unsubscribe();
 
-// Şifreli yedek
+// Encrypted backup
 const backup = await service.exportBackup();
-const added = await service.importBackup(backup, "master-parola", "merge");
+const added = await service.importBackup(backup, "master-password", "merge");
 
-// Google Authenticator aktarma (otpauth-migration://)
+// Google Authenticator export (otpauth-migration://)
 const migrationResult = service.importMigration("otpauth-migration://offline?data=...");
-console.log(`${migrationResult.added} hesap eklendi`);
-console.log(`${migrationResult.skippedMd5} MD5 hesap atlandı`);
+console.log(`${migrationResult.added} accounts added`);
+console.log(`${migrationResult.skippedMd5} MD5 accounts skipped`);
 
-// Parola değiştir + kilit
-await service.changeMasterPassword("master-parola", "yeni-parola");
+// Change password + lock
+await service.changeMasterPassword("master-password", "new-password");
 service.lock();
 ```
 
-Düşük seviyeli modüller de ayrıca dışa aktarılır (`src/index.ts`):
+Lower-level modules are also exported (`src/index.ts`):
 
 ```ts
 import { generateTOTP, verifyTOTP, parseOtpAuthUri, encrypt, decrypt, deriveKey } from "fiotp";
 ```
 
-## Güvenlik Modeli
+## Security Model
 
-| Konu | Yaklaşım |
+| Topic | Approach |
 |---|---|
-| Gizli anahtar depolama | AES-256-GCM, her şifrelemede rastgele 12 bayt IV + 16 bayt auth tag |
-| Anahtar türetme | PBKDF2-HMAC-SHA256, 600.000 iterasyon, 16 bayt rastgele tuz |
-| Parola doğrulama | Verifier bloğunun GCM etiketi üzerinden; parola türevi saklanmaz |
-| Düz metin | Yalnızca kasa açıkken bellekte; `lock()` anahtarı sıfırlar |
-| Otomatik kilit | 5 dk hareketsizlik (servis/CLI üzerinden ayarlanabilir, `null` ile kapatılır) |
-| Dosya izinleri | Kasa ve yedekler `0600`, kasa dizinleri `0700` |
-| Atomik yazma | Önce `.tmp`, sonra rename — yarıda kalan yazma dosyayı bozamaz |
-| Doğrulama | TOTP/HOTP kodları sabit zamanlı (timing-safe) karşılaştırılır |
-| Rate limiting | 5 ardışık başarısız denemeden sonra üstel geri çekilme (30 sn → 15 dk) |
-| Yedekleme | Kasa zaten şifreli olduğundan export doğrudan şifreli JSON'dur; import kendi parolasıyla açılır |
+| Secret key storage | AES-256-GCM, a random 12-byte IV + 16-byte auth tag on every encryption |
+| Key derivation | PBKDF2-HMAC-SHA256, 600,000 iterations, 16-byte random salt |
+| Password verification | Via the GCM tag of a verifier block; no password derivative is stored |
+| Plaintext | Only in memory while the vault is open; `lock()` zeroes out the key |
+| Auto-lock | 5 minutes of inactivity (configurable via the service/CLI, disabled with `null`) |
+| File permissions | Vault and backups `0600`, vault directories `0700` |
+| Atomic writes | Write to `.tmp` first, then rename — an interrupted write cannot corrupt the file |
+| Verification | TOTP/HOTP codes are compared in constant time (timing-safe) |
+| Rate limiting | Exponential backoff after 5 consecutive failed attempts (30s → 15min) |
+| Backup | Since the vault is already encrypted, the export is directly encrypted JSON; import is opened with its own password |
 
-## Proje Yapısı
+## Project Structure
 
 ```
 src/
-├── core/          # Modül 1 — crypto & çekirdek motor
+├── core/          # Module 1 — crypto & core engine
 │   ├── otp.ts     #   HOTP (RFC 4226) + TOTP (RFC 6238)
-│   ├── base32.ts  #   RFC 4648 base32 + doğrulama
-│   ├── cipher.ts  #   AES-256-GCM şifrele/çöz
-│   ├── kdf.ts     #   PBKDF2-SHA256 anahtar türetme
-│   └── errors.ts  #   FiotpError hiyerarşisi
-├── storage/       # Modül 2 — şifreli yerel kasa
-│   ├── vault.ts   #   VaultManager (aç/oluştur/kaydet/kilitle/parola değiştir)
-│   ├── account.ts #   Hesap modeli + doğrulama
+│   ├── base32.ts  #   RFC 4648 base32 + validation
+│   ├── cipher.ts  #   AES-256-GCM encrypt/decrypt
+│   ├── kdf.ts     #   PBKDF2-SHA256 key derivation
+│   └── errors.ts  #   FiotpError hierarchy
+├── storage/       # Module 2 — encrypted local vault
+│   ├── vault.ts   #   VaultManager (open/create/save/lock/change password)
+│   ├── account.ts #   Account model + validation
 │   └── serialization.ts
-├── parser/        # Modül 3 — otpauth:// URI ayrıştırma/üretme + migration
-│   ├── otpauth.ts     # otpauth:// URI ayrıştırma/üretme
-│   ├── migration.ts   # otpauth-migration:// Google Authenticator aktarma
-│   └── protobuf.ts    # Minimal protobuf wire-format okuyucu (sıfır bağımlılık)
-├── qr/            # Modül 3 — QR üretme (SVG/terminal/PNG) ve okuma (PNG)
-├── service/       # Modül 4 — programatik servis facade + canlı akış
+├── parser/        # Module 3 — otpauth:// URI parsing/generation + migration
+│   ├── otpauth.ts     # otpauth:// URI parsing/generation
+│   ├── migration.ts   # otpauth-migration:// Google Authenticator export
+│   └── protobuf.ts    # Minimal protobuf wire-format reader (zero dependencies)
+├── qr/            # Module 3 — QR generation (SVG/terminal/PNG) and reading (PNG)
+├── service/       # Module 4 — programmatic service facade + live stream
 │   ├── fiotp.ts   #   FiotpService
-│   └── ticker.ts  #   LiveCodeTicker (saniyelik yayın)
-└── cli/           # Modül 4 — komut satırı arayüzü
-tests/             # Vitest testleri (RFC vektörleri dahil)
+│   └── ticker.ts  #   LiveCodeTicker (per-second emission)
+└── cli/           # Module 4 — command-line interface
+tests/             # Vitest tests (including RFC vectors)
 ```
 
-## Geliştirme
+## Development
 
 ```bash
-npm run typecheck   # tip kontrolü (tsc --noEmit)
-npm test            # tüm testler
-npm run coverage    # test kapsam raporu
-npm run build       # dist/ üret
+npm run typecheck   # type checking (tsc --noEmit)
+npm test            # run all tests
+npm run coverage    # test coverage report
+npm run build       # produce dist/
 ```
 
-Test paketi RFC 4226 Appendix D ve RFC 6238 Appendix B resmî test vektörlerini içerir; kasa yaşam döngüsü, kurcalama/bütünlük senaryoları, izinler, HOTP sayaç ilerleme, yedekleme ve parola değişimi kapsanır.
+The test suite includes the official test vectors from RFC 4226 Appendix D and RFC 6238 Appendix B; it also covers vault lifecycle, tampering/integrity scenarios, permissions, HOTP counter advancement, backup, and password changes.
 
-## Sınırlamalar
+## Limitations
 
-- QR okuma yalnızca **PNG** biçimindeki görüntüleri destekler (JPEG/WebP desteği yok).
-- Web/kamera tabanlı QR tarama ve grafiksel kullanıcı arayüzü henüz yok.
-- Rate limiting durumu yalnızca bellekte tutulur; süreç yeniden başladığında sayaç sıfırlanır.
+- QR reading only supports images in **PNG** format (no JPEG/WebP support).
+- Web/camera-based QR scanning and a graphical user interface are not yet available.
+- Rate-limiting state is kept in memory only; the counter resets when the process restarts.
