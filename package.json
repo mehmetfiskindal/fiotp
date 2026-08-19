@@ -1,19 +1,30 @@
 {
-  "name": "fiotp",
+  "name": "@developersailor/fiotp",
   "version": "0.1.0",
   "description": "Hafif ve güvenli iki faktörlü kimlik doğrulama (2FA/TOTP) uygulaması",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "bin": {
     "fiotp": "./dist/cli/index.js"
   },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -24,8 +35,19 @@
     "2fa",
     "otp",
     "rfc6238",
-    "rfc4226"
+    "rfc4226",
+    "authenticator",
+    "cli"
   ],
+  "author": "Mehmet Fiskindal <mehmetfiskindal@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mehmetfiskindal/fiotp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mehmetfiskindal/fiotp/issues"
+  },
+  "homepage": "https://github.com/mehmetfiskindal/fiotp#readme",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^26.2.0",
