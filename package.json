@@ -1,6 +1,6 @@
 {
   "name": "@developersailor/fiotp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Hafif ve güvenli iki faktörlü kimlik doğrulama (2FA/TOTP) uygulaması",
   "type": "module",
   "main": "dist/index.js",
