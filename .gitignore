@@ -1,0 +1,19 @@
+# Bağımlılıklar
+node_modules/
+
+# Derleme çıktıları
+dist/
+
+# Test ve araç çıktıları
+coverage/
+*.log
+
+# İşletim sistemi dosyaları
+.DS_Store
+
+# Ortam değişkenleri
+.env
+.env.*
+
+kasa.json
+kasa.json.bak

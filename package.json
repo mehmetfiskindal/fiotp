@@ -1,0 +1,43 @@
+{
+  "name": "fiotp",
+  "version": "0.1.0",
+  "description": "Hafif ve güvenli iki faktörlü kimlik doğrulama (2FA/TOTP) uygulaması",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "fiotp": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "totp",
+    "hotp",
+    "2fa",
+    "otp",
+    "rfc6238",
+    "rfc4226"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@types/pngjs": "^6.0.5",
+    "@types/qrcode": "^1.5.6",
+    "@vitest/coverage-v8": "^4.1.11",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "jsqr": "^1.4.0",
+    "pngjs": "^7.0.0",
+    "qrcode": "^1.5.4"
+  }
+}
